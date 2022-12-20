@@ -27,4 +27,45 @@ insert into screen_schedule(ss_date,ss_time,ss_total_seat,ss_parssible,ss_mo_num
 insert into ticketing(ti_amount, ti_total_price,ti_me_id,ti_ss_num)
 	values(3,30000,'abc',25);
 insert into ticketing_seat(ts_ti_num,ts_se_num)
-	values(2,11),(2,13),(2,15);
+	values(3,11),(3,13),(3,15);
+-- 예매 가능 좌석을 수정 
+update screen_schedule set ss_parssible = ss_parssible - 3
+	where ss_num = 25;
+-- 날짜가 지났을 때 변경되어야 할 쿼리를 작성 
+-- 회원이 본 영화 수를 체크 
+UPDATE member 
+SET 
+    me_movie_count = (SELECT 
+            COUNT(DISTINCT ss_mo_num)
+        FROM
+            ticketing
+                JOIN
+            screen_schedule ON ss_num = ti_ss_num
+        WHERE
+            ss_date < NOW())
+WHERE
+    me_id = 'abc';
+    
+-- 'abc'회원이 예매한 올빼미 12월 20일 13:50 예매를 취소할 때 실행해야 하는 쿼리를 작성 
+-- delete 예약 내역을 삭제
+-- 예약 좌석을 삭제 
+DELETE FROM ticketing_seat 
+WHERE
+    ts_ti_num = 
+		(SELECT ti_num FROM ticketing
+			WHERE ti_ss_num = 
+				(SELECT ss_num FROM screen_schedule
+					WHERE ss_mo_num = 2 AND ss_date = '2022-12-20'
+						AND ss_time = '13:50'
+				)
+                AND ti_me_id = 'abc'
+		);
+-- 예약 내역을 삭제 
+DELETE FROM ticketing
+WHERE
+    ti_ss_num = 
+		(SELECT ss_num FROM screen_schedule
+			WHERE ss_mo_num = 2 AND ss_date = '2022-12-20'
+				AND ss_time = '13:50'
+		)
+	AND ti_me_id = 'abc';
